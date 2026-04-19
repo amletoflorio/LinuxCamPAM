@@ -89,3 +89,41 @@ else
     echo "Non-systemd init detected. Please install init script manually."
     echo "Service binary installed to /usr/local/bin/linuxcampamd"
 fi
+
+# Install unlockKeyring.sh
+echo "Installing unlockKeyring.sh..."
+sudo cp ../scripts/unlockKeyring.sh /usr/local/bin/unlockKeyring.sh
+sudo chmod +x /usr/local/bin/unlockKeyring.sh
+
+# Install setup_keyring.sh as a standalone command
+sudo cp ../scripts/setup_keyring.sh /usr/local/bin/linuxcampam-setup-keyring
+sudo chmod +x /usr/local/bin/linuxcampam-setup-keyring
+
+# ── GNOME Keyring Unlock Wizard ──────────────────────────────────────────────
+echo ""
+echo "====================================================================="
+echo " GNOME Keyring Auto-Unlock (Optional)"
+echo "====================================================================="
+echo ""
+echo " LinuxCamPAM can automatically unlock your GNOME Keyring on face login"
+echo " using a TPM-encrypted password — no password prompt after face auth."
+echo ""
+
+# Only offer interactively
+if [ -t 0 ]; then
+    read -p " Would you like to set this up now? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo ""
+        # Drop sudo, run as the real user
+        REAL_USER="${SUDO_USER:-$USER}"
+        sudo -u "$REAL_USER" bash /usr/local/bin/linuxcampam-setup-keyring
+    else
+        echo " Skipped. You can set it up later by running:"
+        echo "   linuxcampam-setup-keyring"
+        echo ""
+    fi
+else
+    echo " Non-interactive mode. Run 'linuxcampam-setup-keyring' later to configure keyring unlock."
+    echo ""
+fi

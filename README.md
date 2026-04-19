@@ -51,6 +51,9 @@ Since open-sourcing, I've put effort into making it hardware-agnostic and well-d
 
 ## Installation
 
+> **New here?** Read **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)** — a single end-to-end guide that walks you through installation, face enrollment, and automatic keyring unlock in order. All the other docs are reference material for specific topics.
+
+
 ### Option A: Install from Package (Recommended)
 
 If you have downloaded a release file (`.deb`), installation is extremely simple:

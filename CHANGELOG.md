@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- **Keyring unlock: PAM environment PATH** — Added explicit `PATH` at the top
+  of `unlockKeyring.sh` so `tpm2-tools` binaries are found when the script is
+  executed from the PAM environment, which does not inherit the user's PATH.
+- **Keyring unlock: user detection** — The script now resolves the real login
+  user from `PAM_USER`, then `loginctl`, then `getent passwd` (UID ≥ 1000) as
+  fallbacks, instead of relying on `$HOME` which is unset or set to `/root`
+  when invoked by PAM as root.
+- **Keyring unlock: socket-based timing** — Replaced the daemon PID polling
+  loop with a socket existence check on `/run/user/UID/keyring/control`. The
+  socket appears as soon as the daemon is ready, and the 8-second cap stays
+  well within the 10-second `pam_sm_open_session` timeout.
+- **Keyring unlock: D-Bus address** — D-Bus is now resolved from the systemd
+  user socket (`/run/user/UID/bus`) instead of `/proc/<pid>/environ`, which is
+  more reliable at login time when the daemon process may not be fully
+  initialised yet.
+- **Keyring unlock: uid mismatch** — `unlock.py` is now executed via
+  `runuser -u <user>` instead of directly as root. `gnome-keyring-daemon`
+  rejects connections whose uid does not match the keyring owner; running as
+  root produced `control request from bad uid: 0, should be 1000`.
+- **TPM persistent handle** — `unlockKeyring.sh` now uses a persistent TPM primary
+  handle (`tpm2_evictcontrol`) instead of calling `tpm2_createprimary` at every
+  boot. This eliminates a ~2-second delay, reducing total unlock time from ~4s
+  to under 1s. The setup guide has been updated with the one-time
+  `tpm2_evictcontrol` step.
+- **C++ build: GCC 15 `-Werror=unused-result`** — The final `write()` call in
+  `try_unlock_keyring()` that appends a newline to the password pipe now
+  assigns its return value to a named variable to satisfy GCC 15's stricter
+  `warn_unused_result` enforcement (the `(void)` cast alone is insufficient in
+  GCC 15).
+
+### Performance & Security
+
+- **Smoother Default experience**: Changed default `gpu_throttle_ms` to 20ms. This small pause between GPU operations prevents the dreaded "UI freeze" on laptops with integrated graphics during authentication.
+- **Faster First Login**: AI models are now pre-loaded when the service starts, rather than waiting for the first user to walk by.
+- **Hardened Validation**: Switched input validation from regex to a strict character-allowlist loop. This isn't visible to users, but it removes a potential ReDoS attack vector and makes path traversal protection bulletproof.
+
+
 ### Performance & Security
 
 - **Smoother Default experience**: Changed default `gpu_throttle_ms` to 20ms. This small pause between GPU operations prevents the dreaded "UI freeze" on laptops with integrated graphics during authentication.
