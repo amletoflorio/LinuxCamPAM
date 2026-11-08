@@ -70,7 +70,7 @@ TARGET_USER="${PAM_USER:-}"
 if [ -z "$TARGET_USER" ]; then
     TARGET_USER=$(loginctl list-sessions --no-legend 2>/dev/null \
         | awk '{print $3}' \
-        | grep -vE '^(root|gdm|gdm-greeter|nobody)$' \
+        | grep -vE '^(root|gdm|gdm-greeter|_greetd|greetd|greeter|sddm|lightdm|nobody)$' \
         | head -1 || true)
 fi
 if [ -z "$TARGET_USER" ]; then

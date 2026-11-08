@@ -146,6 +146,15 @@ void try_unlock_keyring(pam_handle_t *pamh, const char *script, bool tpm_mode) {
     return;
   }
 
+  // Resolve the login user now: the helper script needs PAM_USER to find the
+  // right home (~/.tpm). Without it, the script falls back to loginctl, which
+  // picks the greeter's own user under greetd (_greetd) and finds no keys.
+  const char *pam_user = nullptr;
+  if (pam_get_item(pamh, PAM_USER, reinterpret_cast<const void **>(&pam_user)) != PAM_SUCCESS) {
+    pam_user = nullptr;
+  }
+  std::string login_user = (pam_user != nullptr) ? pam_user : "";
+
   const char *authtok = nullptr;
   if (!tpm_mode) {
     int ret = pam_get_item(pamh, PAM_AUTHTOK,
@@ -184,6 +193,7 @@ void try_unlock_keyring(pam_handle_t *pamh, const char *script, bool tpm_mode) {
     int dn_w = open("/dev/null", O_WRONLY);
     if (dn_w != -1) { dup2(dn_w, STDOUT_FILENO); dup2(dn_w, STDERR_FILENO); close(dn_w); }
     for (int fd = 3; fd < 256; ++fd) { close(fd); }
+    if (!login_user.empty()) { setenv("PAM_USER", login_user.c_str(), 1); }
     execl(script, script, nullptr);
     _exit(127);
   }
